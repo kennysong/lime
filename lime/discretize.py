@@ -59,8 +59,10 @@ class BaseDiscretizer():
             self.maxs = self.data_stats.get("maxs")
 
         for feature, qts in zip(self.to_discretize, bins):
+
+
             n_bins = qts.shape[0]  # Actually number of borders (= #bins-1)
-            boundaries = np.min(data[:, feature]), np.max(data[:, feature])
+            boundaries = np.nanmin(data[:, feature]), np.nanmax(data[:, feature])
             name = feature_names[feature]
 
             self.names[feature] = ['%s <= %.2f' % (name, qts[0])]
@@ -80,13 +82,19 @@ class BaseDiscretizer():
             self.stds[feature] = []
             for x in range(n_bins + 1):
                 selection = data[discretized == x, feature]
-                mean = 0 if len(selection) == 0 else np.mean(selection)
+                mean = 0 if len(selection) == 0 else np.nanmean(selection)
                 self.means[feature].append(mean)
-                std = 0 if len(selection) == 0 else np.std(selection)
+                std = 0 if len(selection) == 0 else np.nanstd(selection)
                 std += 0.00000000001
                 self.stds[feature].append(std)
             self.mins[feature] = [boundaries[0]] + qts.tolist()
             self.maxs[feature] = qts.tolist() + [boundaries[1]]
+
+        # print('DEBUG: Make sure there are no NaNs')
+        # print(self.means)
+        # print(self.stds)
+        # print(self.mins)
+        # print(self.maxs)
 
     @abstractmethod
     def bins(self, data, labels):
@@ -182,7 +190,7 @@ class QuartileDiscretizer(BaseDiscretizer):
     def bins(self, data, labels):
         bins = []
         for feature in self.to_discretize:
-            qts = np.array(np.percentile(data[:, feature], [25, 50, 75]))
+            qts = np.array(np.nanpercentile(data[:, feature], [25, 50, 75]))
             bins.append(qts)
         return bins
 
